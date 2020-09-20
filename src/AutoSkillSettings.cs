@@ -1,15 +1,16 @@
-﻿using System.Windows.Forms;
-using PoeHUD.Hud.Settings;
-using PoeHUD.Plugins;
+﻿using ExileCore.Shared.Interfaces;
+using ExileCore.Shared.Nodes;
+using ExileCore.Shared.Attributes;
+using System.Windows.Forms;
 
 namespace AutoSkill
 {
-    public class AutoSkillSettings : SettingsBase
+    public class AutoSkillSettings : ISettings
     {
         public AutoSkillSettings()
         {
             //plugin itself
-            Enable = false;
+            Enable = new ToggleNode(false);
             
             SkillKeyPressed = Keys.W;
             SkillSettings = new EmptyNode();
@@ -47,5 +48,6 @@ namespace AutoSkill
         public ToggleNode ThrottleFrequency { get; set; }
         [Menu("Frequency", 15, 4)]
         public RangeNode<int> Frequency { get; set; }
+        public ToggleNode Enable { get; set; }
     }
 }

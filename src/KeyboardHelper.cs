@@ -1,4 +1,4 @@
-﻿using PoeHUD.Controllers;
+﻿using ExileCore;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;

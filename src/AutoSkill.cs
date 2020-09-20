@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Timers;
-using PoeHUD.Controllers;
-using PoeHUD.Models;
-using PoeHUD.Plugins;
-using PoeHUD.Poe;
-using PoeHUD.Poe.Components;
-using PoeHUD.Poe.RemoteMemoryObjects;
+using ExileCore;
+using ExileCore.PoEMemory;
+using ExileCore.PoEMemory.Components;
+using ExileCore.PoEMemory.MemoryObjects;
 using SharpDX;
 using Timer = System.Timers.Timer;
 
@@ -17,28 +15,42 @@ namespace AutoSkill
     public class AutoSkill : BaseSettingsPlugin<AutoSkillSettings>
     {
         private bool IsTownOrHideout => GameController.Area.CurrentArea.IsTown || GameController.Area.CurrentArea.IsHideout;
-        private readonly HashSet<EntityWrapper> nearbyMonsters = new HashSet<EntityWrapper>();
+        private readonly HashSet<Entity> nearbyMonsters = new HashSet<Entity>();
         private Timer skillTimer;
         private Stopwatch settingsStopwatch;
         private Stopwatch intervalStopwatch;
         private KeyboardHelper keyboard;
         private int highlightSkill;
 
-        public override void Initialise()
+        public AutoSkill()
         {
-            PluginName = "Auto Skill";
-            
+            Name = "AutoSkill";
+        }
+
+        public override bool Initialise()
+        {
             OnSettingsToggle();
-            Settings.Enable.OnValueChanged += OnSettingsToggle;
-            Settings.ConnectedSkill.OnValueChanged += ConnectedSkillOnOnValueChanged;
+            Settings.Enable.OnValueChanged += Enable_OnValueChanged;
+            Settings.ConnectedSkill.OnValueChanged += ConnectedSkill_OnValueChanged; ;
             settingsStopwatch = new Stopwatch();
             intervalStopwatch = Stopwatch.StartNew();
             skillTimer = new Timer(100) {AutoReset = true};
             skillTimer.Elapsed += SkillTimerOnElapsed;
             skillTimer.Start();
             keyboard = new KeyboardHelper(GameController);
+            return true;
         }
-        
+
+        private void ConnectedSkill_OnValueChanged(object sender, int e)
+        {
+            ConnectedSkillOnOnValueChanged();
+        }
+
+        private void Enable_OnValueChanged(object sender, bool e)
+        {
+            OnSettingsToggle();
+        }
+
         private bool ChatOpen
         {
             get
@@ -103,7 +115,7 @@ namespace AutoSkill
                 else
                 {
                     IngameUIElements ingameUiElements = GameController.Game.IngameState.IngameUi;
-                    Graphics.DrawFrame(ingameUiElements.SkillBar[highlightSkill].GetClientRect(), 3f, Color.Yellow);
+                    Graphics.DrawFrame(ingameUiElements.SkillBar[highlightSkill].GetClientRect(), Color.Yellow, 3);
                 }
             }
             else
@@ -112,7 +124,7 @@ namespace AutoSkill
             }
         }
 
-        public override void EntityAdded(EntityWrapper entity)
+        public override void EntityAdded(Entity entity)
         {
             if (!Settings.Enable.Value)
                 return;
@@ -124,7 +136,7 @@ namespace AutoSkill
             }
         }
 
-        public override void EntityRemoved(EntityWrapper entity)
+        public override void EntityRemoved(Entity entity)
         {
             if (!Settings.Enable.Value)
                 return;
@@ -224,7 +236,7 @@ namespace AutoSkill
             Vector3 positionPlayer = GameController.Game.IngameState.Data.LocalPlayer.GetComponent<Render>().Pos;
 
             int monstersInRange = 0;
-            foreach (EntityWrapper monster in new List<EntityWrapper>(nearbyMonsters))
+            foreach (Entity monster in new List<Entity>(nearbyMonsters))
             {
                 if (monster.IsValid && monster.IsAlive && !monster.Path.Contains("ElementalSummoned"))
                 {
@@ -262,14 +274,14 @@ namespace AutoSkill
             {
                 if (i >= plottedCirclePoints.Count - 1)
                 {
-                    var pointEnd1 = camera.WorldToScreen(plottedCirclePoints.Last(), rndEntity);
-                    var pointEnd2 = camera.WorldToScreen(plottedCirclePoints[0], rndEntity);
+                    var pointEnd1 = camera.WorldToScreen(plottedCirclePoints.Last());
+                    var pointEnd2 = camera.WorldToScreen(plottedCirclePoints[0]);
                     Graphics.DrawLine(pointEnd1, pointEnd2, lineWidth, color);
                     return;
                 }
 
-                var point1 = camera.WorldToScreen(plottedCirclePoints[i], rndEntity);
-                var point2 = camera.WorldToScreen(plottedCirclePoints[i + 1], rndEntity);
+                var point1 = camera.WorldToScreen(plottedCirclePoints[i]);
+                var point2 = camera.WorldToScreen(plottedCirclePoints[i + 1]);
                 Graphics.DrawLine(point1, point2, lineWidth, color);
             }
         }
